@@ -366,6 +366,92 @@ describe("Editor component", () => {
 		});
 	});
 
+	describe("JetBrains ESC+CR/ESC+LF (Shift+Enter) handling", () => {
+		it("inserts newline on ESC+CR (JetBrains 2025.3.3+ Shift+Enter)", () => {
+			const editor = new Editor(createTestTUI(), defaultEditorTheme);
+			editor.handleInput("hello");
+			for (let i = 0; i < 5; i++) editor.handleInput("\x1b[D");
+			editor.handleInput("\x1b\r");
+
+			assert.deepStrictEqual(editor.getLines(), ["", "hello"]);
+			assert.deepStrictEqual(editor.getCursor(), { line: 1, col: 0 });
+		});
+
+		it("inserts newline on ESC+LF (alternative JetBrains Shift+Enter)", () => {
+			const editor = new Editor(createTestTUI(), defaultEditorTheme);
+			editor.handleInput("hello");
+			for (let i = 0; i < 5; i++) editor.handleInput("\x1b[D");
+			editor.handleInput("\x1b\n");
+
+			assert.deepStrictEqual(editor.getLines(), ["", "hello"]);
+			assert.deepStrictEqual(editor.getCursor(), { line: 1, col: 0 });
+		});
+
+		it("splits text at cursor on ESC+CR", () => {
+			const editor = new Editor(createTestTUI(), defaultEditorTheme);
+			editor.handleInput("hello world");
+			for (let i = 0; i < 6; i++) editor.handleInput("\x1b[D");
+			editor.handleInput("\x1b\r");
+
+			assert.deepStrictEqual(editor.getLines(), ["hello", " world"]);
+			assert.deepStrictEqual(editor.getCursor(), { line: 1, col: 0 });
+		});
+
+		it("ESC+CR does not submit the value", () => {
+			const editor = new Editor(createTestTUI(), defaultEditorTheme);
+			let submitted = "";
+			editor.onSubmit = (text) => {
+				submitted = text;
+			};
+
+			editor.handleInput("hello");
+			editor.handleInput("\x1b\r");
+
+			assert.strictEqual(submitted, "");
+			assert.deepStrictEqual(editor.getLines(), ["hello", ""]);
+		});
+
+		it("inserts newline on JetBrains Kitty CSI-u \x1b[13;2u", () => {
+			const editor = new Editor(createTestTUI(), defaultEditorTheme);
+			editor.handleInput("hello");
+			for (let i = 0; i < 5; i++) editor.handleInput("\x1b[D");
+			editor.handleInput("\x1b[13;2u");
+
+			assert.deepStrictEqual(editor.getLines(), ["", "hello"]);
+			assert.deepStrictEqual(editor.getCursor(), { line: 1, col: 0 });
+		});
+
+		it("inserts newline on JetBrains Kitty CSI-u with event type \x1b[13;2:1u", () => {
+			const editor = new Editor(createTestTUI(), defaultEditorTheme);
+			editor.handleInput("hello");
+			for (let i = 0; i < 5; i++) editor.handleInput("\x1b[D");
+			editor.handleInput("\x1b[13;2:1u");
+
+			assert.deepStrictEqual(editor.getLines(), ["", "hello"]);
+			assert.deepStrictEqual(editor.getCursor(), { line: 1, col: 0 });
+		});
+
+		it("plain LF (\n) inserts a newline", () => {
+			const editor = new Editor(createTestTUI(), defaultEditorTheme);
+			editor.handleInput("hello");
+			editor.handleInput("\n");
+
+			assert.deepStrictEqual(editor.getLines(), ["hello", ""]);
+		});
+
+		it("multiple ESC+CR inserts multiple newlines", () => {
+			const editor = new Editor(createTestTUI(), defaultEditorTheme);
+			editor.handleInput("hello");
+			editor.handleInput("\x1b\r");
+			editor.handleInput("world");
+			editor.handleInput("\x1b\r");
+			editor.handleInput("!");
+
+			assert.deepStrictEqual(editor.getLines(), ["hello", "world", "!"]);
+			assert.deepStrictEqual(editor.getCursor(), { line: 2, col: 1 });
+		});
+	});
+
 	describe("Kitty CSI-u handling", () => {
 		it("ignores printable CSI-u sequences with unsupported modifiers", () => {
 			const editor = new Editor(createTestTUI(), defaultEditorTheme);

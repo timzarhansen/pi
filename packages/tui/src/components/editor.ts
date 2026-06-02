@@ -724,6 +724,7 @@ export class Editor implements Component, Focusable {
 			kb.matches(data, "tui.input.newLine") ||
 			(data.charCodeAt(0) === 10 && data.length > 1) ||
 			data === "\x1b\r" ||
+			data === "\x1b\n" ||
 			data === "\x1b[13;2~" ||
 			(data.length > 1 && data.includes("\x1b") && data.includes("\r")) ||
 			(data === "\n" && data.length === 1)
@@ -1155,7 +1156,7 @@ export class Editor implements Component, Focusable {
 		this.insertTextAtCursorInternal(filteredText);
 	}
 
-	private addNewLine(): void {
+	protected addNewLine(): void {
 		this.cancelAutocomplete();
 		this.historyIndex = -1; // Exit history browsing mode
 		this.lastAction = null;
