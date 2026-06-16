@@ -36,7 +36,8 @@ export class CustomEditor extends Editor {
 			data === "\x1b\r" ||
 			data === "\x1b\n" ||
 			data === "\x1b[13;2u" ||
-			data === "\x1b[13;2:1u" // JetBrains Kitty protocol with event type (press)
+			data === "\x1b[13;2:1u" || // JetBrains Kitty protocol with event type (press)
+			data === "\n" // VS Code / terminals sending bare LF for Shift+Enter
 		) {
 			this.addNewLine();
 			return;
