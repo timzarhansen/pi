@@ -5,24 +5,43 @@ Use it to guide rebases, merges, and conflict resolution.
 
 ---
 
-## JetBrains Shift+Enter Fix
+## Shift+Enter → Newline (Extension-based)
 
 | Field | Value |
 |---|---|
-| **Commit** | `c1543690789ca28cf03216e36522d341b02113f1` |
-| **Date** | 2026-06-02 |
-| **Why** | JetBrains IDEs 2025.3.3+ send `ESC+CR` (`\x1b\r`) or `ESC+LF` (`\x1b\n`) for Shift+Enter. Without Kitty keyboard protocol, the keybinding system interprets `\x1b\r` as Alt+Enter, triggering `app.message.followUp` instead of inserting a newline. |
+| **Date** | 2026-06-16 |
+| **Why** | Terminals send different byte sequences for Shift+Enter (JetBrains: `ESC+CR`, VS Code: bare `\n`, Kitty: CSI-u). Without proper handling, these sequences fall through to submit or follow-up instead of inserting a newline. |
 
-### Files Changed
+### Architecture
+
+**Primary**: Extension at `~/.pi/agent/extensions/shift-enter-fix/index.ts`
+- Subclasses `CustomEditor`, overrides `handleInput()`
+- Intercepts 6 known Shift+Enter sequences BEFORE any keybinding checks
+- Calls `this.addNewLine()` (inherited, `protected`)
+- All other input passes through to `super.handleInput(data)`
+- Registered via `ctx.ui.setEditorComponent()` on `session_start`
+
+Handled sequences:
+| Sequence | Source |
+|---|---|
+| `\n` | VS Code / bare LF |
+| `\x1b\r` | JetBrains ESC+CR |
+| `\x1b\n` | JetBrains ESC+LF |
+| `\x1b[13;2u` | Kitty CSI-u |
+| `\x1b[13;2:1u` | Kitty CSI-u (press) |
+| `\x1b[13;2~` | xterm function-key |
+
+### Core Changes (preserved)
 
 | File | Change |
 |---|---|
-| `packages/coding-agent/src/modes/interactive/components/custom-editor.ts` | Detect `ESC+CR`, `ESC+LF`, `CSI-u [13;2u`, `CSI-u [13;2:1u` at top of `handleInput()` before keybinding checks → calls `addNewLine()` |
-| `packages/tui/src/components/editor.ts` | Added `ESC+LF` (`\x1b\n`) to newline detection; changed `addNewLine()` from `private` to `protected` |
-| `packages/tui/test/editor.test.ts` | 8 new tests covering all JetBrains Shift+Enter variants |
+| `packages/tui/src/components/editor.ts` | `ESC+LF` (`\x1b\n`) in newline detection; `addNewLine()` is `protected` |
+| `packages/tui/test/editor.test.ts` | Tests for all Shift+Enter variants + bare LF |
+
+The core `custom-editor.ts` has NO hardcoded Shift+Enter handling — this was moved to the extension.
 
 ### Rebase/Merge Notes
 
-- **Upstream risk**: Low. The upstream has not touched these files since this commit.
-- **Watch for**: If upstream modifies `handleInput()` in `custom-editor.ts` or `addNewLine()` visibility/signature in `editor.ts`, merge conflicts are likely.
-- **Conflict strategy**: Apply the JetBrains escape-sequence detection block before any upstream-added keybinding checks. Preserve `protected` modifier on `addNewLine()`.
+- **Upstream risk**: Minimal. The core `custom-editor.ts` has no local modifications for Shift+Enter.
+- **Watch for**: If upstream changes `addNewLine()` from `protected` to `private` in `editor.ts`. If upstream removes `ESC+LF` from editor newline detection.
+- **Conflict strategy**: The extension is the primary fix and lives outside the repo. On merge, preserve `protected` on `addNewLine()` and the editor's newline sequence list. No custom-editor.ts conflicts expected.

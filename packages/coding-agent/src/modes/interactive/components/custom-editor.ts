@@ -28,21 +28,6 @@ export class CustomEditor extends Editor {
 	}
 
 	handleInput(data: string): void {
-		// JetBrains 2025.3.3+ sends ESC+CR (\x1b\r) or ESC+LF (\x1b\n) for Shift+Enter.
-		// JetBrains' Kitty keyboard protocol plugin sends \x1b[13;2u (Enter codepoint, shift modifier).
-		// Without Kitty protocol, \x1b\r is also interpreted as alt+enter by the keybindings
-		// system, so we must check for Shift+Enter before the keybinding checks.
-		if (
-			data === "\x1b\r" ||
-			data === "\x1b\n" ||
-			data === "\x1b[13;2u" ||
-			data === "\x1b[13;2:1u" || // JetBrains Kitty protocol with event type (press)
-			data === "\n" // VS Code / terminals sending bare LF for Shift+Enter
-		) {
-			this.addNewLine();
-			return;
-		}
-
 		// Check extension-registered shortcuts first
 		if (this.onExtensionShortcut?.(data)) {
 			return;
