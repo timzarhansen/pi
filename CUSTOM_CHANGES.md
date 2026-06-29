@@ -14,12 +14,12 @@ Use it to guide rebases, merges, and conflict resolution.
 
 ### Architecture
 
-**Primary**: Extension at `~/.pi/agent/extensions/shift-enter-fix/index.ts`
-- Subclasses `CustomEditor`, overrides `handleInput()`
+**Primary**: `~/.pi/agent/extensions/autosuggestion/index.ts` — integrated into `GhostEditor` class (extends `CustomEditor`)
+- `GhostEditor` overrides `handleInput()`
 - Intercepts 6 known Shift+Enter sequences BEFORE any keybinding checks
 - Calls `this.addNewLine()` (inherited, `protected`)
 - All other input passes through to `super.handleInput(data)`
-- Registered via `ctx.ui.setEditorComponent()` on `session_start`
+- Part of the autosuggestion extension (registered on `session_start` like other autosuggestion logic)
 
 Handled sequences:
 | Sequence | Source |
