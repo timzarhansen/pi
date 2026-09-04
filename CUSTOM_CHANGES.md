@@ -45,3 +45,9 @@ The core `custom-editor.ts` has NO hardcoded Shift+Enter handling — this was m
 - **Upstream risk**: Minimal. The core `custom-editor.ts` has no local modifications for Shift+Enter.
 - **Watch for**: If upstream changes `addNewLine()` from `protected` to `private` in `editor.ts`. If upstream removes `ESC+LF` from editor newline detection.
 - **Conflict strategy**: The extension is the primary fix and lives outside the repo. On merge, preserve `protected` on `addNewLine()` and the editor's newline sequence list. No custom-editor.ts conflicts expected.
+
+### Merge Log
+
+| Date | Upstream | Result |
+|---|---|---|
+| 2026-07-02 | v0.85.0 (589 commits) | Clean merge, no conflicts. Upstream made `addNewLine()` `private` and removed `ESC+LF` — git auto-resolved preserving local `protected` + `\x1b\n` (line 882) + tests. All 2102 tests pass. |
