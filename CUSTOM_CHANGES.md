@@ -51,3 +51,4 @@ The core `custom-editor.ts` has NO hardcoded Shift+Enter handling — this was m
 | Date | Upstream | Result |
 |---|---|---|
 | 2026-07-02 | v0.85.0 (589 commits) | Clean merge, no conflicts. Upstream made `addNewLine()` `private` and removed `ESC+LF` — git auto-resolved preserving local `protected` + `\x1b\n` (line 882) + tests. All 2102 tests pass. |
+| 2026-09-07 | v0.85.1  (20 commits) | Clean merge, no conflicts. Custom changes intact: `addNewLine()` `protected` (line 1317), `\x1b\n` handling (line 882), Shift+Enter tests. All 2161 tests pass. |
