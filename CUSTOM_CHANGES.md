@@ -5,6 +5,14 @@ Use it to guide rebases, merges, and conflict resolution.
 
 ---
 
+## Other Local Deltas (undocumented elsewhere)
+
+| File | Change | Notes |
+|---|---|---|
+| root `package.json` / `package-lock.json` | `@types/semver@7.7.1` added as devDependency | Added incidentally in local commit `53145ce23` (Shift+Enter fix). Redundant: `packages/coding-agent` already declares it. Harmless; upstream removed it from the root. |
+
+---
+
 ## Shift+Enter → Newline (Extension-based)
 
 | Field | Value |
@@ -52,3 +60,4 @@ The core `custom-editor.ts` has NO hardcoded Shift+Enter handling — this was m
 |---|---|---|
 | 2026-07-02 | v0.85.0 (589 commits) | Clean merge, no conflicts. Upstream made `addNewLine()` `private` and removed `ESC+LF` — git auto-resolved preserving local `protected` + `\x1b\n` (line 882) + tests. All 2102 tests pass. |
 | 2026-09-07 | v0.85.1  (20 commits) | Clean merge, no conflicts. Custom changes intact: `addNewLine()` `protected` (line 1317), `\x1b\n` handling (line 882), Shift+Enter tests. All 2161 tests pass. |
+| 2026-09-10 | upstream/main @ `6b94ae2ec` (35 commits) | Clean merge, no conflicts. Custom changes intact: `addNewLine()` `protected` (line 1317), `\x1b\n` handling (line 882), Shift+Enter tests. One upstream test failure: `packages/ai/test/anthropic-adaptive-thinking-models.test.ts` — upstream commit `6b94ae2ec` marks 9 Fireworks Messages models as `forceAdaptiveThinking` (by design), but this older invariant test still filters to Claude/kimi IDs only. Unrelated to local changes; needs an upstream test fix or a local test patch. |
