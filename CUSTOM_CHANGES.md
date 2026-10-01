@@ -9,7 +9,7 @@ Use it to guide rebases, merges, and conflict resolution.
 
 | File | Change | Notes |
 |---|---|---|
-| root `package.json` / `package-lock.json` | `@types/semver@7.7.1` added as devDependency | Added incidentally in local commit `53145ce23` (Shift+Enter fix). Redundant: `packages/coding-agent` already declares it. Harmless; upstream removed it from the root. |
+| root `package.json` / `package-lock.json` | `@types/semver@7.7.1` added as devDependency | **Removed 2026-10 (v0.99.2 merge)**: resolved to upstream, which removed it from the root. `packages/coding-agent` still declares it. No local delta remains here. |
 
 ---
 
@@ -60,4 +60,5 @@ The core `custom-editor.ts` has NO hardcoded Shift+Enter handling — this was m
 |---|---|---|
 | 2026-07-02 | v0.85.0 (589 commits) | Clean merge, no conflicts. Upstream made `addNewLine()` `private` and removed `ESC+LF` — git auto-resolved preserving local `protected` + `\x1b\n` (line 882) + tests. All 2102 tests pass. |
 | 2026-09-07 | v0.85.1  (20 commits) | Clean merge, no conflicts. Custom changes intact: `addNewLine()` `protected` (line 1317), `\x1b\n` handling (line 882), Shift+Enter tests. All 2161 tests pass. |
-| 2026-09-10 | upstream/main @ `6b94ae2ec` (35 commits) | Clean merge, no conflicts. Custom changes intact: `addNewLine()` `protected` (line 1317), `\x1b\n` handling (line 882), Shift+Enter tests. One upstream test failure: `packages/ai/test/anthropic-adaptive-thinking-models.test.ts` — upstream commit `6b94ae2ec` marks 9 Fireworks Messages models as `forceAdaptiveThinking` (by design), but this older invariant test still filters to Claude/kimi IDs only. Unrelated to local changes; needs an upstream test fix or a local test patch. |
+| 2026-09-10 | upstream/main @ `6b94ae2ec` (35 commits) | Clean merge, no conflicts. Custom changes intact: `addNewLine()` `protected` (line 1317), `\x1b\n` handling (line 882), Shift-Enter tests. One upstream test failure: `packages/ai/test/anthropic-adaptive-thinking-models.test.ts` — upstream commit `6b94ae2ec` marks 9 Fireworks Messages models as `forceAdaptiveThinking` (by design), but this older invariant test still filters to Claude/kimi IDs only. Unrelated to local changes; needs an upstream test fix or a local test patch. |
+| 2026-10-01 | v0.99.2 (320 commits) | Conflicts only in root `package.json` + `package-lock.json` (`@types/semver` / `@typescript/native-preview`); resolved by taking upstream. Custom changes intact: `addNewLine()` `protected` (line 1328), `\x1b\n` handling (line 894), Shift-Enter tests. Note: upstream now has its own native Shift-Enter support (Kitty CSI-u via `keys.ts`, `\x1b\r`/`\n` when Kitty active), but still lacks `\x1b\n` (JetBrains ESC+LF) and `\x1b[13;2:1u` (Kitty press event) — local delta still needed. Merge commit `beab4dda5`. Full `npm run check` + `./test.sh` pass (all suites, exit 0). |
