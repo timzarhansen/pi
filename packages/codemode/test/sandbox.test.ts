@@ -388,10 +388,13 @@ describe.each(Object.keys(BACKENDS))("%s backend", (name) => {
 				return result.ok ? result.value : result.error.message;
 			};
 			expect(await attempt("tools.Echo")).toBe(
-				'tools.Echo does not exist. Did you mean tools.echo? ALL_TOOLS lists every tool; searchTools(query) finds tools by topic. Check for a member with "Echo" in tools.',
+				'tools.Echo does not exist. Did you mean tools.echo? ALL_TOOLS lists script-callable tools; searchTools(query) finds them by topic. Model-only tools are excluded and must be called directly. Check for a member with "Echo" in tools.',
 			);
 			expect(await attempt("tools.websearch")).toContain("Did you mean tools.web_search?");
 			expect(await attempt("tools.nothing")).toContain("Available: echo, web_search.");
+			expect(await attempt("tools.subagents_enable")).toContain(
+				"Model-only tools are excluded and must be called directly.",
+			);
 			expect(
 				await attempt("['echo' in tools, 'nothing' in tools, String(tools.toString), JSON.stringify(tools)]"),
 			).toEqual([true, false, "undefined", "{}"]);

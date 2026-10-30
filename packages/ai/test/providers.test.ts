@@ -76,6 +76,33 @@ describe("builtin providers", () => {
 		});
 	});
 
+	it("registers GPT-6.1 Terra in the GitHub Copilot catalog", () => {
+		expect(getBuiltinModel("github-copilot", "gpt-6.1-terra")).toMatchObject({
+			name: "GPT-6.1 Terra",
+			api: "openai-responses",
+			baseUrl: "https://api.individual.githubcopilot.com",
+			reasoning: true,
+			input: ["text", "image"],
+			contextWindow: 1_050_000,
+			maxTokens: 128_000,
+			cost: { input: 1, output: 5, cacheRead: 0.05, cacheWrite: 1.25 },
+			compat: {
+				supportsOpenAIGrammarTools: true,
+				supportsMidConvoSystemMessages: true,
+				supportsAdditionalTools: true,
+			},
+			thinkingLevelMap: {
+				off: "none",
+				minimal: null,
+				low: "low",
+				medium: "medium",
+				high: "high",
+				xhigh: "xhigh",
+				max: "max",
+			},
+		});
+	});
+
 	it("returns empty results for unknown provider ids", () => {
 		const unknownProvider = "not-a-provider" as never;
 		const unknownModel = "x" as never;
