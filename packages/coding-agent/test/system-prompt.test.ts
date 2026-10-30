@@ -108,7 +108,7 @@ describe("buildSystemPrompt", () => {
 			expect(prompt).toContain(expected);
 		});
 
-		test("instructs models to resolve pi docs and examples under absolute base paths", () => {
+		test("scopes pi documentation reading to relevant APIs and examples", () => {
 			const prompt = buildSystemPrompt({
 				contextFiles: [],
 				skills: [],
@@ -118,6 +118,12 @@ describe("buildSystemPrompt", () => {
 			expect(prompt).toContain(
 				"- When reading pi docs or examples, resolve docs/... under Additional docs and examples/... under Examples, not the current working directory",
 			);
+			expect(prompt).toContain(
+				"For the specific task, read the relevant API documentation and the smallest applicable example",
+			);
+			expect(prompt).toContain("consult additional references only when needed to resolve an uncertain contract");
+			expect(prompt).not.toContain("Always read pi .md files completely");
+			expect(prompt).not.toContain("follow .md cross-references before implementing");
 			expect(prompt).toContain("environment variables (docs/environment-variables.md), MCP servers (docs/mcp.md)");
 		});
 	});

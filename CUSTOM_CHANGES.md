@@ -3,6 +3,10 @@
 This file tracks all local modifications to the pi-agent codebase beyond upstream `upstream/main`.
 Use it to guide rebases, merges, and conflict resolution.
 
+## Pi documentation prompt policy
+
+The system prompt directs Pi-topic work to the relevant API documentation and the smallest applicable example. Consult additional references only when needed to resolve uncertain contracts or directly relevant requirements; do not blanket-read all Markdown files or follow every link. Documentation asset roots are resolved from the package configuration, not assumed relative to the working directory.
+
 ---
 
 ## Other Local Deltas (undocumented elsewhere)
@@ -22,7 +26,7 @@ Use it to guide rebases, merges, and conflict resolution.
 
 ### Architecture
 
-**Primary**: `~/.pi/agent/extensions/autosuggestion/index.ts` — integrated into `GhostEditor` class (extends `CustomEditor`)
+**Primary**: `$PI_CODING_AGENT_DIR/extensions/autosuggestion/index.ts` (default: `~/.pi/agent/extensions/autosuggestion/index.ts`) — integrated into `GhostEditor` class (extends `CustomEditor`)
 - `GhostEditor` overrides `handleInput()`
 - Intercepts 6 known Shift+Enter sequences BEFORE any keybinding checks
 - Calls `this.addNewLine()` (inherited, `protected`)
