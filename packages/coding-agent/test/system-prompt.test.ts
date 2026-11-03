@@ -48,7 +48,9 @@ describe("buildSystemPrompt", () => {
 				skills: [],
 			});
 
-			expect(defaultPrompt.startsWith("You are an expert coding assistant operating inside pi")).toBe(true);
+			expect(defaultPrompt.startsWith("You are a coding assistant running inside pi, a coding agent harness.")).toBe(
+				true,
+			);
 			expect(customPrompt.startsWith("You are Exact.\n\n<cwd>")).toBe(true);
 		});
 
@@ -125,6 +127,9 @@ describe("buildSystemPrompt", () => {
 			expect(prompt).not.toContain("Always read pi .md files completely");
 			expect(prompt).not.toContain("follow .md cross-references before implementing");
 			expect(prompt).toContain("environment variables (docs/environment-variables.md), MCP servers (docs/mcp.md)");
+			expect(prompt).toContain(
+				"Before implementing harness changes, read the relevant docs and examples in full, following related cross-references.",
+			);
 		});
 	});
 
@@ -198,6 +203,9 @@ describe("buildSystemPrompt", () => {
 			expect(prompt).toContain("<available_skills>");
 			expect(prompt).toContain("<name>test-skill</name>");
 			expect(prompt).toContain("Use bash to load a skill's file");
+			expect(prompt).toContain(
+				"Resolve relative paths against the skill's directory (parent of SKILL.md). Use absolute paths in tool calls.",
+			);
 		});
 
 		test("omits skills without read or bash", () => {

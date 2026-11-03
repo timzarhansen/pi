@@ -6,6 +6,12 @@
 
 - Clarified that missing-tool discovery lists only script-callable tools and that model-only tools must be called directly
 
+## [1.5.0] - 2026-11-02
+
+### Changed
+
+- README: the codemode tool example builds its parameters with `@earendil-works/pi-schema` instead of TypeBox.
+
 ## [1.4.0] - 2026-10-21
 
 ## [1.3.0] - 2026-10-15
