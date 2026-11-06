@@ -77,7 +77,9 @@ tab.connect(webSocketLink(new WebSocket(url)), { principal: { kind: "server" } }
   `hold { hold, type, version, fingerprint, params, address, principal?, incarnation? }` (`address`: `{ kind, params }`
   the caller's `hostAddress` computed, it routes the hold; the provider places it by its params; `principal` and `incarnation`: whom it acts for, read only
   on a parent link; `chain?`: the instance ids of the activations waiting for the hold, at most 32, read only on a
-  trusted link; `limit?`: the decoded limit per part of the link a relay admitted it on, read only on a parent link), `release`, `call { call, hold, method, args?, segments? }`, `abort`, `bound { holds: [{ hold,
+  trusted link; `limit?`: the decoded limit per part of the link a relay admitted it on, read only on a parent link), `release`, `call { call, hold, method, args?, segments?, old? }` (`old: true`: old work of a reload on the
+  caller's host, honoured only from a trusted link and dropped by a relay from one that is not; binary: `0x20` in the
+  call's kind byte, text: the seventh element, after the trace carrier), `abort`, `bound { holds: [{ hold,
   variant, members: [{ member, value }], failed }] }` (one message may bind several holds: first bindings, re-holds),
   `state { holds: [{ hold, members: [{ member, ops }], failed }] }`, `ack {}` (one per applied `bound` or `state` of
   its origin), `closed { origin }` (a relay's downstream origin ended: its holds and calls go), `ping {}`, `pong {}`,
@@ -120,8 +122,10 @@ tab.connect(webSocketLink(new WebSocket(url)), { principal: { kind: "server" } }
   until it settles; they are then handled in order, and dropped when the link closes meanwhile; a rejection is a
   protocol error.
 - The heartbeat, in `Channel`: every received message stamps `lastReceived` (sends do not count); the host's one
-  interval timer calls `tick(now, ping, close)` on every link: a link silent for `close` ms (30 s by default), the
-  handshake included, closes; an open one silent for `ping` ms (15 s) sends one `ping`. A `ping` is answered with
+  interval timer calls `tick(now, paused, ping, close)` on every link: a link silent for `close` ms (30 s by default),
+  the handshake included, closes; an open one silent for `ping` ms (15 s) sends one `ping`. `paused` is the time this
+  process did not run before a tick at least one interval late (a sleep, a blocked event loop): it is no silence, the
+  silence stays what it was before, at least `ping`, so an open link pings at once. A `ping` is answered with
   `pong` at once, never queued behind the window; neither reaches the handler. It detects a silent transport, not a
   peer that answers pings but withholds acks (the window and the pending cap bound that).
 - Who checks what (layers 1-3 failing close the link):

@@ -7,6 +7,7 @@ import { ChordError } from "../data/index.ts";
 import { invalid } from "../data/internal.ts";
 import type { SqliteValue } from "../sqlite/index.ts";
 import type { Columns, RowOf } from "./columns.ts";
+import type { LiveQueries } from "./live-query.ts";
 import { decodeCursor, encodeCursor, type Query } from "./query.ts";
 import { TableSql } from "./sql.ts";
 import type { ChordStore } from "./store.ts";
@@ -36,11 +37,16 @@ export interface Table<C extends Columns, K extends readonly string[]> {
 /** The handle type of table definition `D`: what `self.table(D)` returns. */
 export type TableOf<D> = D extends TableDefinition<infer C, infer K> ? Table<C, K> : never;
 
-/** Who owns a table handle: its object (whose transactions alone write it), liveness check and live failure. */
+/**
+ * Who owns a table handle: its object (whose transactions alone write it), its live queries, liveness check and live
+ * failure.
+ */
 export type TableOwner = {
 	readonly label: string;
 	/** The object's documents: a transaction of another object refuses the handle. */
 	readonly scope: object;
+	/** The object's live queries, across its attempts: what a commit writing the table re-runs. */
+	readonly queries: LiveQueries;
 	/** Throws `released` once the object ended. */
 	assertLive(): void;
 	/** A row the code cannot read (a `json(...)` cell, slice 6a §9) fails the owner `broken` (§1.4). */
@@ -126,9 +132,9 @@ export class TableHandle implements Table<Columns, readonly string[]> {
 	}
 
 	/**
-	 * The version fence of old table handles (R15, slice 7b §5): once the store's table is at a newer version than this
-	 * handle's definition (a reload's new code migrated it), old code reads and writes it no more (`released/version`),
-	 * so it never issues SQL for a dropped column.
+	 * The version fence of old table handles (R15): once the store's table is at a newer version than this handle's
+	 * definition (a reload's new code migrated it), old code still running (a call cut off at its restart's seal) reads
+	 * and writes it no more (`released/version`), so it never issues SQL for a dropped column.
 	 */
 	assertVersion(): void {
 		const stored = this.store.tableVersion(this.sql.table);
