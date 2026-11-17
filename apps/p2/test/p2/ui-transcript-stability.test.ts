@@ -15,7 +15,7 @@ import { Models } from "../../plugins/models/contract.ts";
 import { Sessions, SessionTransfer } from "../../plugins/sessions/contract.ts";
 import type { Host } from "../../src/runtime/chord.ts";
 import { bigSessionEntries } from "../fixtures/big-session.ts";
-import { Browser, browserTests } from "./browser.ts";
+import { Browser, browserTests, COMPOSER } from "./browser.ts";
 import { type Fixture, holdIn, startFixture, until } from "./helpers.ts";
 import { type ProbeReport, RENDER_PROBE } from "./render-probe.ts";
 
@@ -150,6 +150,7 @@ describe("transcript stability", { skip: !browserTests }, () => {
 			.hold(Models, {}, BACKGROUND_CONTEXT)
 			.setDefault({ provider: "faux", modelId: "faux-1", thinkingLevel: "off" }, BACKGROUND_CONTEXT);
 		browser = await Browser.start();
+		await browser.signIn(fixture.owner);
 		await browser.call("Page.addScriptToEvaluateOnNewDocument", { source: RENDER_PROBE });
 		await browser.metrics(390, 844);
 	});
@@ -159,13 +160,15 @@ describe("transcript stability", { skip: !browserTests }, () => {
 	});
 
 	it("renders only the new and changed rows, and keeps the others' DOM, while turns arrive and stream", async () => {
-		const session = await seeded("Long", bigSessionEntries(800, 400));
+		// Long, yet well below the faux model's compaction threshold (128k less the reserve): a blocking compaction
+		// would hold the streamed answer back. 800 entries came within 450 tokens of it.
+		const session = await seeded("Long", bigSessionEntries(760, 400));
 		const chat = await holdIn(owner, Chat, { session, conversation: 1 }, "participant");
 		const stop = follow(chat.view, () => {});
 		try {
 			await browser.open(url(`/s/${session}`));
 			await browser.wait(
-				`document.querySelector('.composer textarea') && document.querySelectorAll('[data-row]').length > 3`,
+				`document.querySelector('${COMPOSER}') && document.querySelectorAll('[data-row]').length > 3`,
 			);
 			await sleep(1_500);
 
@@ -222,12 +225,12 @@ describe("transcript stability", { skip: !browserTests }, () => {
 		try {
 			await browser.open(url(`/s/${session}`));
 			await browser.wait(
-				`document.querySelector('.composer textarea') && document.querySelectorAll('[data-row]').length > 3`,
+				`document.querySelector('${COMPOSER}') && document.querySelectorAll('[data-row]').length > 3`,
 			);
 			await sleep(1_500);
 			// Thinking first (`steps`, then a plain echo), words first (`tool`): every first part takes the working
-			// wheel's place without a jump.
-			for (const prompt of ["steps", "tool", "hello there"]) {
+			// wheel's place without a jump; an inline artifact appears in place between two wheels without one either.
+			for (const prompt of ["steps", "tool", "hello there", "inline-steps"]) {
 				await browser.evaluate(RESET);
 				await chat.send({ text: prompt, requestId: prompt }, BACKGROUND_CONTEXT);
 				// The person's message is the anchor: following the bottom, it only ever moves up.
@@ -245,6 +248,14 @@ describe("transcript stability", { skip: !browserTests }, () => {
 				assert.ok(run.track && run.track.frames > 10, `${prompt}: the run was followed`);
 				assert.equal(Math.round(run.track.downs), 0, `${prompt}: jumped down ${JSON.stringify(run.track.moves)}`);
 				assert.equal(run.track.shrinks, 0, `${prompt}: the transcript shrank while the run went on`);
+				if (prompt === "inline-steps")
+					// The turn's rows after the person's message: the artifact where it was made, between the two wheels.
+					assert.deepEqual(
+						await browser.evaluate<string[]>(
+							`(() => { const rows=[...document.querySelectorAll('[data-row]')]; const at=rows.findIndex((row)=>row.dataset.row===${message}); return rows.slice(at+1).map((row)=>row.querySelector('[data-testid=activity]')?'activity':row.querySelector('.artifact-inline')?'inline':row.querySelector('.assistant')?'answer':row.dataset.row); })()`,
+						),
+						["activity", "inline", "activity", "answer"],
+					);
 			}
 
 			// A reader scrolled up keeps what they look at while a turn arrives and streams below.
@@ -272,9 +283,7 @@ describe("transcript stability", { skip: !browserTests }, () => {
 	it("shows a mixed turn and incoming messages (screenshots)", { skip: !SCREENSHOTS }, async () => {
 		const session = await seeded("Mixed", mixedEntries());
 		await browser.open(url(`/s/${session}`));
-		await browser.wait(
-			`document.querySelector('.composer textarea') && document.querySelectorAll('[data-row]').length > 5`,
-		);
+		await browser.wait(`document.querySelector('${COMPOSER}') && document.querySelectorAll('[data-row]').length > 5`);
 		await sleep(1_000);
 		await browser.evaluate("(document.querySelector('.scroller').scrollTop = 0, true)");
 		await sleep(600);
