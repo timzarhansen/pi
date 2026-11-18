@@ -45,9 +45,8 @@ export type CurrentVariants<C extends Contract> = CurrentStep<ShapeOf<C>["histor
  * The value a contract's admission hands its factory (slice 14 §2.1): what its `admission` schema describes; `never`
  * for a contract without one.
  */
-export type AdmittedOf<C extends Contract> = ShapeOf<C> extends { readonly admission: infer A extends Schema }
-	? Static<A>
-	: never;
+export type AdmittedOf<C extends Contract> =
+	ShapeOf<C> extends { readonly admission: infer A extends Schema } ? Static<A> : never;
 
 /** The params object of a contract. */
 export type ParamsOf<C extends Contract> = { [F in keyof ShapeOf<C>["params"]]: Static<ShapeOf<C>["params"][F]> };
@@ -96,9 +95,8 @@ export type VariantImplementation<V extends VariantShape, X extends Context = Co
 };
 
 /** The named queries of a `queries` member declaration: one per listed name, typed by its item and arguments. */
-export type NamedQueriesOf<Q> = Q extends QueriesMember<infer I, infer A>
-	? { readonly [N in keyof A]: NamedQuery<Static<I>, Static<A[N]>> }
-	: never;
+export type NamedQueriesOf<Q> =
+	Q extends QueriesMember<infer I, infer A> ? { readonly [N in keyof A]: NamedQuery<Static<I>, Static<A[N]>> } : never;
 
 /** A page of a named query's items and, when more follow, the cursor to continue after it. */
 export type QueryPage<T> = { readonly items: T[]; readonly next?: string };

@@ -31,6 +31,16 @@ describe("Google CONTINUATION finish reason", () => {
 		expect(mapStopReason(FinishReason.CONTINUATION)).toBe("length");
 	});
 
+	it.each([
+		FinishReason.MISSING_THOUGHT_SIGNATURE,
+		FinishReason.MALFORMED_RESPONSE,
+		FinishReason.ESCALATION,
+		FinishReason.PUP_LIMITED_DISABLED,
+		FinishReason.MODEL_ARMOR,
+	])("maps %s to error", (reason) => {
+		expect(mapStopReason(reason)).toBe("error");
+	});
+
 	// #12097: the SDK continues automatically by default; the adapters turn that off.
 	it("ends the turn as length instead of letting the SDK send a continuation request", async () => {
 		const chunk = {

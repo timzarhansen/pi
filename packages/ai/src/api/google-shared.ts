@@ -521,6 +521,11 @@ export function mapStopReason(reason: FinishReason): StopReason {
 		case FinishReason.UNEXPECTED_TOOL_CALL:
 		case FinishReason.TOO_MANY_TOOL_CALLS:
 		case FinishReason.NO_IMAGE:
+		case FinishReason.MISSING_THOUGHT_SIGNATURE:
+		case FinishReason.MALFORMED_RESPONSE:
+		case FinishReason.ESCALATION:
+		case FinishReason.PUP_LIMITED_DISABLED:
+		case FinishReason.MODEL_ARMOR:
 			return "error";
 		default: {
 			const _exhaustive: never = reason;

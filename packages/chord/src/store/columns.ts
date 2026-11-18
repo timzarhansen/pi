@@ -33,19 +33,20 @@ export type Columns = { readonly [name: string]: ColumnSchema };
 export type ColumnType = "str" | "int" | "num" | "bool" | "json";
 
 /** The store type of column schema `S` (a `host(...)` column is a `str` one holding address keys). */
-export type ColumnTypeOf<S> = S extends Optional<infer I>
-	? ColumnTypeOf<I>
-	: S extends HostColumnSchema<KindShape>
-		? "str"
-		: S extends StringSchema
+export type ColumnTypeOf<S> =
+	S extends Optional<infer I>
+		? ColumnTypeOf<I>
+		: S extends HostColumnSchema<KindShape>
 			? "str"
-			: S extends IntegerSchema
-				? "int"
-				: S extends NumberSchema
-					? "num"
-					: S extends BooleanSchema
-						? "bool"
-						: "json";
+			: S extends StringSchema
+				? "str"
+				: S extends IntegerSchema
+					? "int"
+					: S extends NumberSchema
+						? "num"
+						: S extends BooleanSchema
+							? "bool"
+							: "json";
 
 /** The value type of column schema `S` (without `undefined` for an `opt(...)` one). */
 export type ValueOf<S> = S extends Optional<infer I> ? ValueOf<I> : S extends Schema ? Static<S> : never;

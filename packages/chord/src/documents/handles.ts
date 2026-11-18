@@ -45,13 +45,14 @@ export interface KeyedHandle<T extends JsonObject, Key = string> {
 }
 
 /** The handle `self.state(definition)` returns. */
-export type HandleOf<D> = D extends StateDefinition<infer T, infer K, boolean>
-	? K extends true
-		? KeyedHandle<T>
-		: K extends KindShape
-			? KeyedHandle<T, Address<K>>
-			: SingletonHandle<T>
-	: never;
+export type HandleOf<D> =
+	D extends StateDefinition<infer T, infer K, boolean>
+		? K extends true
+			? KeyedHandle<T>
+			: K extends KindShape
+				? KeyedHandle<T, Address<K>>
+				: SingletonHandle<T>
+		: never;
 
 /**
  * A singleton's handle. Reads go to the slot (allowed after the seal); `change` and `retire` take the line under the

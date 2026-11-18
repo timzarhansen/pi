@@ -33,11 +33,12 @@ export interface FacetHost<P extends Principal = Principal> {
  * `host.serve`'s options argument: required, with `admit`, for a contract that declares an `admission`; optional
  * otherwise.
  */
-export type ServeArguments<C extends Contract, P extends Principal = Principal> = ShapeOf<C> extends {
-	readonly admission: Schema;
-}
-	? [options: ServeOptions<C, P> & { readonly admit: Admit<C, P> }]
-	: [options?: ServeOptions<C, P>];
+export type ServeArguments<C extends Contract, P extends Principal = Principal> =
+	ShapeOf<C> extends {
+		readonly admission: Schema;
+	}
+		? [options: ServeOptions<C, P> & { readonly admit: Admit<C, P> }]
+		: [options?: ServeOptions<C, P>];
 
 /** What `host.serve` takes besides the type and the factory. */
 export type ServeOptions<C extends Contract = Contract, P extends Principal = Principal> = {

@@ -2,13 +2,14 @@ import Anthropic, { type ClientOptions } from "@anthropic-ai/sdk";
 import type {
 	BetaInputTransformation,
 	BetaStopReason,
+	BetaSystemMessageParam,
 	BetaTool,
 	BetaCacheControlEphemeral as CacheControlEphemeral,
 	BetaContentBlockParam as ContentBlockParam,
-	MessageCreateParamsStreaming,
 	BetaMessageParam as MessageParam,
 	BetaRawMessageStreamEvent as RawMessageStreamEvent,
 	BetaRefusalStopDetails as RefusalStopDetails,
+	MessageCreateParamsStreaming as SdkMessageCreateParamsStreaming,
 } from "@anthropic-ai/sdk/resources/beta/messages/messages.js";
 import {
 	ANTHROPIC_FEDERATION_RULE_ID_ENV,
@@ -256,10 +257,9 @@ function getAnthropicCompat(model: Model<"anthropic-messages">) {
  * `prepareThreadRequest()` compares it with the previous request of the session and sends
  * only the new part when nothing earlier changed.
  */
-type ThreadParam = { type: "create" } | { type: "continue"; previous_message_id: string };
-
-/** The pinned SDK types do not include the `thread` request field yet. */
-type ThreadedParams = MessageCreateParamsStreaming & { thread?: ThreadParam };
+/** The beta SDK type omits temperature, which compatible models still accept. */
+type MessageCreateParamsStreaming = SdkMessageCreateParamsStreaming & { temperature?: number };
+type ThreadedParams = MessageCreateParamsStreaming;
 
 interface ThreadEntry {
 	/** Number of messages in the last full request as sent plus the converted reply. */
@@ -1632,7 +1632,7 @@ function convertMessages(
 	// immediately follow their `tool_use`, so a system message between them is rejected; this
 	// also mirrors where the managed-effort system messages are inserted. As a result an
 	// update placed before a user message in the transcript lands after it on the wire.
-	const pendingSystemMessages: MessageParam[] = [];
+	const pendingSystemMessages: BetaSystemMessageParam[] = [];
 	const flushPendingSystemMessages = (): void => {
 		params.push(...pendingSystemMessages);
 		pendingSystemMessages.length = 0;
@@ -1645,7 +1645,7 @@ function convertMessages(
 			// Later system messages only reach this point when the model accepts them natively;
 			// otherwise the transcript was collapsed into the leading message before conversion.
 			const text = renderSystemMessageUpdate(msg);
-			const blocks: ContentBlockParam[] = [];
+			const blocks: Exclude<NonNullable<BetaSystemMessageParam["content"]>, string> = [];
 			if (text.length > 0) blocks.push({ type: "text", text: sanitizeSurrogates(text) });
 			if (convertToolDefinitions) {
 				const added = msg.toolsAdded ?? [];
