@@ -6,6 +6,11 @@ import { streamSimple as streamGoogleVertex } from "../src/api/google-vertex.ts"
 import type { Api, FetchFunction, Model } from "../src/types.ts";
 import { normalizeContext } from "../src/utils/transcript.ts";
 
+// The pinned SDK's FinishReason type predates these valid wire values.
+function asFutureFinishReason(reason: string): FinishReason {
+	return reason as FinishReason;
+}
+
 const context = normalizeContext({
 	messages: [{ role: "user", content: "hello", timestamp: 1 }],
 });
@@ -32,11 +37,11 @@ describe("Google CONTINUATION finish reason", () => {
 	});
 
 	it.each([
-		FinishReason.MISSING_THOUGHT_SIGNATURE,
-		FinishReason.MALFORMED_RESPONSE,
-		FinishReason.ESCALATION,
-		FinishReason.PUP_LIMITED_DISABLED,
-		FinishReason.MODEL_ARMOR,
+		asFutureFinishReason("MISSING_THOUGHT_SIGNATURE"),
+		asFutureFinishReason("MALFORMED_RESPONSE"),
+		asFutureFinishReason("ESCALATION"),
+		asFutureFinishReason("PUP_LIMITED_DISABLED"),
+		asFutureFinishReason("MODEL_ARMOR"),
 	])("maps %s to error", (reason) => {
 		expect(mapStopReason(reason)).toBe("error");
 	});

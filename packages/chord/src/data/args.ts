@@ -37,8 +37,9 @@ export type CheckedArgs<C extends Contract, M extends string> =
 	| { readonly kind: "method"; readonly args: ArgsOf<C, M>; readonly result?: (current: Value) => Value }
 	| { readonly kind: "call"; readonly args: Value; readonly call: (args: Value, context: Context) => Promise<Value> };
 
-type ArgsOf<C extends Contract, M extends string> =
-	M extends MemberNames<CurrentVariants<C>, "methods"> ? Static<MethodAt<CurrentVariants<C>, M>["args"]> : Value;
+type ArgsOf<C extends Contract, M extends string> = M extends MemberNames<CurrentVariants<C>, "methods">
+	? Static<MethodAt<CurrentVariants<C>, M>["args"]>
+	: Value;
 
 /**
  * Binds a contract and the app's accepts table (validated once, kept as it is) into a provider. Builds the dispatch
@@ -77,8 +78,12 @@ type CheckedAccepts = {
 
 type CheckedMethodMapping =
 	| "refuse"
-	| { readonly call: (args: Value, context: Context) => Promise<Value> }
-	| { readonly args?: (old: Value) => Value; readonly result?: (current: Value) => Value };
+	| {
+			readonly call: (args: Value, context: Context) => Promise<Value>;
+			readonly args?: never;
+			readonly result?: never;
+	  }
+	| { readonly call?: never; readonly args?: (old: Value) => Value; readonly result?: (current: Value) => Value };
 
 /** Accepted version -> method -> entry. */
 type Dispatch = Map<number, Map<string, DispatchEntry>>;
@@ -117,7 +122,7 @@ function dispatchEntries(
 
 function dispatchEntry(args: Snapshot, mapping: CheckedMethodMapping | undefined): DispatchEntry {
 	if (mapping === "refuse") return { kind: "refuse" };
-	if (mapping !== undefined && "call" in mapping) {
+	if (mapping?.call !== undefined) {
 		return { kind: "call", args, call: mapping.call, validator: undefined };
 	}
 	return { kind: "method", args, mapArgs: mapping?.args, mapResult: mapping?.result, validator: undefined };
