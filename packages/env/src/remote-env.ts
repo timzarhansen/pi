@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { posix, win32 } from "node:path";
+import { type PlatformPath, posix, win32 } from "node:path";
 import { StringDecoder } from "node:string_decoder";
 import { fileURLToPath } from "node:url";
 import type { Context } from "@earendil-works/chord/context";
@@ -65,11 +65,11 @@ type RemoteFileInfo = { name: string; kind: FileKind | "other"; size: number; mt
 type RemoteDirEntry = { name: string; raw?: number[]; info?: RemoteFileInfo; error?: Json };
 
 /** Node's path rules of the remote system. */
-export async function remotePath(connection: Connection): Promise<typeof win32> {
+export async function remotePath(connection: Connection): Promise<PlatformPath> {
 	return nodePlatform(await connection.info()).platform === "win32" ? win32 : posix;
 }
 
-function toInfo(path: string, remote: RemoteFileInfo, paths: typeof win32): Result<FileInfo, FileError> {
+function toInfo(path: string, remote: RemoteFileInfo, paths: PlatformPath): Result<FileInfo, FileError> {
 	if (remote.kind === "other") return err(new FileError("invalid", "Unsupported file type", path));
 	return ok({
 		name: paths.basename(path),
@@ -310,30 +310,28 @@ class RemoteTextLineReader implements TextLineReader {
 		if (aborted) return aborted;
 		if (this.#closed) return err(new FileError("invalid", "Text line reader is closed", path));
 		try {
-			while (true) {
-				const newline = this.#buffered.indexOf("\n");
-				if (newline !== -1) {
-					const text = this.#buffered.slice(0, newline);
-					this.#buffered = this.#buffered.slice(newline + 1);
-					return ok({ text, terminated: true });
-				}
-				if (this.#ended) {
-					if (this.#buffered.length === 0) return ok(undefined);
-					const text = this.#buffered;
-					this.#buffered = "";
-					return ok({ text, terminated: false });
-				}
+			let newline = this.#buffered.indexOf("\n");
+			while (newline === -1 && !this.#ended) {
 				const bytes = await this.#handle.pread(this.#offset, LINE_CHUNK);
 				const afterReadAbort = abortResult<TextLine | undefined>(context.abortSignal, path);
 				if (afterReadAbort) return afterReadAbort;
 				this.#offset += bytes.length;
-				if (bytes.length === 0) {
-					this.#buffered += this.#decoder.decode();
-					this.#ended = true;
-				} else {
-					this.#buffered += this.#decoder.decode(bytes);
-				}
+				this.#ended = bytes.length === 0;
+				const text = this.#ended ? this.#decoder.decode() : this.#decoder.decode(bytes);
+				// Only the new text is scanned, so a line longer than one read is not rescanned per read.
+				const found = text.indexOf("\n");
+				if (found !== -1) newline = this.#buffered.length + found;
+				this.#buffered += text;
 			}
+			if (newline !== -1) {
+				const text = this.#buffered.slice(0, newline);
+				this.#buffered = this.#buffered.slice(newline + 1);
+				return ok({ text, terminated: true });
+			}
+			if (this.#buffered.length === 0) return ok(undefined);
+			const text = this.#buffered;
+			this.#buffered = "";
+			return ok({ text, terminated: false });
 		} catch (error) {
 			return err(toFileError(error, path));
 		}

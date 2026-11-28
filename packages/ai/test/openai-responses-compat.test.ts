@@ -163,59 +163,57 @@ describe("openai-responses provider defaults", () => {
 	it.each([
 		getModel("cloudflare-ai-gateway", "gpt-5.6-sol"),
 		getModel("github-copilot", "gpt-5.3-codex"),
-		getModel("github-copilot", "gpt-6-luna"),
-	] satisfies Model<"openai-responses">[])(
-		"sets strict mode explicitly for $provider/$id Responses tools",
-		async (model) => {
-			let capturedPayload: CapturedResponsesPayload | undefined;
+		getModel("github-copilot", "mai-code-2"),
+		getModel("github-copilot", "grok-4.7"),
+	])("sets strict mode explicitly for $provider/$id Responses tools", async (model) => {
+		let capturedPayload: CapturedResponsesPayload | undefined;
 
-			vi.spyOn(globalThis, "fetch").mockResolvedValue(
-				new Response("data: [DONE]\n\n", {
-					status: 200,
-					headers: { "content-type": "text/event-stream" },
-				}),
-			);
+		vi.spyOn(globalThis, "fetch").mockResolvedValue(
+			new Response("data: [DONE]\n\n", {
+				status: 200,
+				headers: { "content-type": "text/event-stream" },
+			}),
+		);
 
-			const stream = streamOpenAIResponses(
-				model,
-				normalizeContext({
-					messages: [{ role: "user", content: "Use a tool.", timestamp: Date.now() }],
-					tools: [
-						{
-							name: "ordinary",
-							description: "An ordinary tool",
-							parameters: Type.Object({
-								path: Type.String(),
-								offset: Type.Optional(Type.Number()),
-							}),
-						},
-						{
-							name: "constrained",
-							description: "A constrained tool",
-							parameters: Type.Object({ value: Type.String() }),
-							constrainedSampling: { type: "json_schema", strict: "prefer" },
-						},
-					],
-				}),
-				{
-					apiKey: "sk-test-key",
-					onPayload: (payload) => {
-						capturedPayload = payload as CapturedResponsesPayload;
+		const stream = streamOpenAIResponses(
+			model,
+			normalizeContext({
+				messages: [{ role: "user", content: "Use a tool.", timestamp: Date.now() }],
+				tools: [
+					{
+						name: "ordinary",
+						description: "An ordinary tool",
+						parameters: Type.Object({
+							path: Type.String(),
+							offset: Type.Optional(Type.Number()),
+						}),
 					},
+					{
+						name: "constrained",
+						description: "A constrained tool",
+						parameters: Type.Object({ value: Type.String() }),
+						constrainedSampling: { type: "json_schema", strict: "prefer" },
+					},
+				],
+			}),
+			{
+				apiKey: "sk-test-key",
+				onPayload: (payload) => {
+					capturedPayload = payload as CapturedResponsesPayload;
 				},
-			);
+			},
+		);
 
-			for await (const event of stream) {
-				if (event.type === "done" || event.type === "error") break;
-			}
+		for await (const event of stream) {
+			if (event.type === "done" || event.type === "error") break;
+		}
 
-			expect(model.compat?.supportsStrictMode).toBe(true);
-			expect(capturedPayload?.tools).toEqual([
-				expect.objectContaining({ name: "ordinary", strict: false }),
-				expect.objectContaining({ name: "constrained", strict: true }),
-			]);
-		},
-	);
+		expect(model.compat?.supportsStrictMode).toBe(true);
+		expect(capturedPayload?.tools).toEqual([
+			expect.objectContaining({ name: "ordinary", strict: false }),
+			expect.objectContaining({ name: "constrained", strict: true }),
+		]);
+	});
 
 	it.each([
 		"gpt-5.1",

@@ -76,33 +76,6 @@ describe("builtin providers", () => {
 		});
 	});
 
-	it("registers GPT-6.1 Terra in the GitHub Copilot catalog", () => {
-		expect(getBuiltinModel("github-copilot", "gpt-6.1-terra")).toMatchObject({
-			name: "GPT-6.1 Terra",
-			api: "openai-responses",
-			baseUrl: "https://api.individual.githubcopilot.com",
-			reasoning: true,
-			input: ["text", "image"],
-			contextWindow: 1_050_000,
-			maxTokens: 128_000,
-			cost: { input: 1, output: 5, cacheRead: 0.05, cacheWrite: 1.25 },
-			compat: {
-				supportsOpenAIGrammarTools: true,
-				supportsMidConvoSystemMessages: true,
-				supportsAdditionalTools: true,
-			},
-			thinkingLevelMap: {
-				off: "none",
-				minimal: null,
-				low: "low",
-				medium: "medium",
-				high: "high",
-				xhigh: "xhigh",
-				max: "max",
-			},
-		});
-	});
-
 	it("returns empty results for unknown provider ids", () => {
 		const unknownProvider = "not-a-provider" as never;
 		const unknownModel = "x" as never;
@@ -130,6 +103,15 @@ describe("builtin providers", () => {
 		const copilotClaude = getBuiltinModels("github-copilot").filter((model) => model.api === "anthropic-messages");
 		expect(copilotClaude.length).toBeGreaterThan(0);
 		for (const model of copilotClaude) expect(model.compat).toMatchObject({ supportsStrictTools: true });
+	});
+
+	// #12316
+	it("sends effort changes in the conversation and warms the cache on GitHub Copilot", () => {
+		const opus = getBuiltinModel("github-copilot", "claude-opus-5.5");
+		expect(opus.compat?.supportsMidConvoEffort).toBe(true);
+		expect(opus.promptCache).toEqual({ short: 300, long: 3600 });
+		expect(getBuiltinModel("github-copilot", "gpt-6-sol").compat?.supportsMidConvoEffort).toBe(true);
+		expect(getBuiltinModel("github-copilot", "gpt-5.6-sol").compat?.supportsMidConvoEffort).toBeUndefined();
 	});
 
 	it("keeps the conservative resize profile on every vision model", () => {
@@ -214,10 +196,13 @@ describe("builtin providers", () => {
 			["opencode", "claude-opus-5"],
 			["opencode", "kimi-k3"],
 			["opencode-go", "kimi-k3"],
-			["github-copilot", "gpt-5.6-terra"],
-			["github-copilot", "claude-opus-5"],
+			["github-copilot", "gpt-6.1-terra"],
+			["github-copilot", "claude-opus-5.5"],
 			["github-copilot", "claude-opus-4.8"],
 			["github-copilot", "kimi-k3"],
+			// #12316
+			["github-copilot", "gpt-5.3-codex"],
+			["github-copilot", "mai-code-2-flash"],
 			["deepseek", "deepseek-v4-pro"],
 			["openrouter", "openai/gpt-5.6-terra"],
 		] as const;
@@ -230,6 +215,7 @@ describe("builtin providers", () => {
 			["opencode", "gpt-5.2"],
 			["opencode", "claude-sonnet-4-5"],
 			["github-copilot", "claude-sonnet-4.6"],
+			["github-copilot", "grok-4.7"],
 			["deepseek", "deepseek-flash"],
 			["openrouter", "anthropic/claude-opus-5"],
 			["openrouter", "moonshotai/kimi-k3"],
@@ -252,7 +238,7 @@ describe("builtin providers", () => {
 		const models = builtinModels();
 		for (const [provider, modelId] of [
 			["opencode", "gpt-5.6-terra"],
-			["github-copilot", "gpt-5.6-terra"],
+			["github-copilot", "gpt-6.1-terra"],
 		] as const) {
 			// Proxies pass `additional_tools` through to OpenAI but are not verified for tool search.
 			expect(models.getModel(provider, modelId)?.compat, `${provider}/${modelId}`).toMatchObject({
@@ -262,15 +248,16 @@ describe("builtin providers", () => {
 				"supportsToolSearch",
 			);
 		}
-		// Proxied Anthropic endpoints reject `tool_addition`/`tool_removal` blocks.
-		for (const provider of ["opencode", "github-copilot"] as const) {
-			expect(models.getModel(provider, "claude-opus-5")?.compat, provider).not.toHaveProperty(
-				"supportsMidConvoToolChanges",
-			);
+		// OpenCode rejects `tool_addition`/`tool_removal` blocks; Copilot passes them through (#12316).
+		expect(models.getModel("opencode", "claude-opus-5")?.compat).not.toHaveProperty("supportsMidConvoToolChanges");
+		for (const [provider, modelId] of [
+			["anthropic", "claude-opus-5"],
+			["github-copilot", "claude-opus-5.5"],
+		] as const) {
+			expect(models.getModel(provider, modelId)?.compat, `${provider}/${modelId}`).toMatchObject({
+				supportsMidConvoToolChanges: true,
+			});
 		}
-		expect(models.getModel("anthropic", "claude-opus-5")?.compat).toMatchObject({
-			supportsMidConvoToolChanges: true,
-		});
 		// Kimi-style tool-bearing system messages survive Moonshot and OpenCode but not Copilot.
 		for (const provider of ["moonshotai", "moonshotai-cn", "opencode", "opencode-go"] as const) {
 			expect(models.getModel(provider, "kimi-k3")?.compat, provider).toMatchObject({

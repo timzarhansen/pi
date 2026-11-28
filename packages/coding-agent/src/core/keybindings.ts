@@ -11,13 +11,14 @@ import { join } from "path";
 import { Compile } from "typebox/compile";
 import { getAgentDir } from "../config.ts";
 import { stripBom } from "../utils/text.ts";
+import { isWSL } from "../utils/wsl.ts";
 import { KeybindingValueSchema } from "./key-id-schema.ts";
 
 export function useWindowsKeybindings(
 	platform: NodeJS.Platform = process.platform,
 	env: NodeJS.ProcessEnv = process.env,
 ): boolean {
-	return platform === "win32" || (platform === "linux" && Boolean(env.WSL_DISTRO_NAME || env.WSL_INTEROP));
+	return platform === "win32" || isWSL(platform, env);
 }
 
 const windowsKeybindings = useWindowsKeybindings();
@@ -356,4 +357,4 @@ export class KeybindingsManager extends TuiKeybindingsManager {
 	}
 }
 
-export type { Keybinding, KeybindingsConfig, KeyId };
+export type { Keybinding, KeyId, KeybindingsConfig };

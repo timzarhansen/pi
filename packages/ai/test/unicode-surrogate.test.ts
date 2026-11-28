@@ -498,7 +498,7 @@ describe("AI Providers Unicode Surrogate Pair Tests", () => {
 	});
 
 	describe.skipIf(!hasCloudflareWorkersAICredentials())("Cloudflare Workers AI Provider Unicode Handling", () => {
-		const llm = getModel("cloudflare-workers-ai", "@cf/moonshotai/kimi-k2.6");
+		const llm = getModel("cloudflare-workers-ai", "@cf/zai-org/glm-5.3");
 
 		it("should handle emoji in tool results", { retry: 3, timeout: 30000 }, async () => {
 			await testEmojiInToolResults(llm);
@@ -514,7 +514,7 @@ describe("AI Providers Unicode Surrogate Pair Tests", () => {
 	});
 
 	describe.skipIf(!hasCloudflareAiGatewayCredentials())("Cloudflare AI Gateway Provider Unicode Handling", () => {
-		const llm = getModel("cloudflare-ai-gateway", "workers-ai/@cf/moonshotai/kimi-k2.6");
+		const llm = getModel("cloudflare-ai-gateway", "workers-ai/@cf/zai-org/glm-5.3");
 
 		it("should handle emoji in tool results", { retry: 3, timeout: 30000 }, async () => {
 			await testEmojiInToolResults(llm);
@@ -596,7 +596,7 @@ describe("AI Providers Unicode Surrogate Pair Tests", () => {
 	});
 
 	describe.skipIf(!process.env.MISTRAL_API_KEY)("Mistral Provider Unicode Handling", () => {
-		const llm = getModel("mistral", "devstral-medium-latest");
+		const llm = getModel("mistral", "mistral-medium-latest");
 
 		it("should handle emoji in tool results", { retry: 3, timeout: 30000 }, async () => {
 			await testEmojiInToolResults(llm);
@@ -658,10 +658,7 @@ describe("AI Providers Unicode Surrogate Pair Tests", () => {
 
 			it(
 				"should handle unpaired high surrogate (0xD83D) in tool results",
-				{
-					retry: 3,
-					timeout: 30000,
-				},
+				{ retry: 3, timeout: 30000 },
 				async () => {
 					await testUnpairedHighSurrogate(llm);
 				},
@@ -684,10 +681,7 @@ describe("AI Providers Unicode Surrogate Pair Tests", () => {
 
 			it(
 				"should handle unpaired high surrogate (0xD83D) in tool results",
-				{
-					retry: 3,
-					timeout: 30000,
-				},
+				{ retry: 3, timeout: 30000 },
 				async () => {
 					await testUnpairedHighSurrogate(llm);
 				},
@@ -710,10 +704,7 @@ describe("AI Providers Unicode Surrogate Pair Tests", () => {
 
 			it(
 				"should handle unpaired high surrogate (0xD83D) in tool results",
-				{
-					retry: 3,
-					timeout: 30000,
-				},
+				{ retry: 3, timeout: 30000 },
 				async () => {
 					await testUnpairedHighSurrogate(llm);
 				},
@@ -784,10 +775,7 @@ describe("AI Providers Unicode Surrogate Pair Tests", () => {
 
 			it(
 				"should handle unpaired high surrogate (0xD83D) in tool results",
-				{
-					retry: 3,
-					timeout: 30000,
-				},
+				{ retry: 3, timeout: 30000 },
 				async () => {
 					await testUnpairedHighSurrogate(llm);
 				},

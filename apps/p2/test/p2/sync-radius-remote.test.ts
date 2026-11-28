@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { SYNC_PROTOCOL } from "@earendil-works/chord/sync";
-import { isTerminalSyncError, RadiusSyncRemote } from "../../plugins/sync/radius-remote.ts";
+import { isTerminalSyncError, RadiusSyncRemote } from "../../plugins/backup/radius-remote.ts";
 import { TEST } from "./helpers.ts";
 
 const SERVER = "01234567-89ab-4def-8123-456789abcdef";
@@ -37,6 +37,33 @@ function conflict(code: string, details: Record<string, unknown>): Response {
 }
 
 describe("Radius sync remote", () => {
+	it("streams the body: a piece is taken only as the request reads, never the whole body first", async () => {
+		let produced = 0;
+		async function* pieces() {
+			for (let index = 0; index < 8; index++) {
+				produced++;
+				yield new Uint8Array([index]);
+			}
+		}
+		// How many pieces had been produced each time the request read one.
+		const producedAtRead: number[] = [];
+		const result = await new RadiusSyncRemote(
+			async () => ({ gateway: "https://radius.example", serverId: SERVER, token: "radius-token" }),
+			async (input, init) => {
+				const reader = new Request(input, init).body!.getReader();
+				for (let read = await reader.read(); !read.done; read = await reader.read()) producedAtRead.push(produced);
+				return Response.json({ created: true }, { status: 201 });
+			},
+		).putBatch(SESSION, 0, 8, SERVER, pieces(), TEST);
+		assert.deepEqual(result, { type: "created" });
+		assert.equal(producedAtRead.length, 8);
+		// The producer is at most one piece ahead of the request (none buffered up front).
+		assert.ok(
+			producedAtRead.every((count, read) => count <= read + 2),
+			`pieces produced at each read: ${producedAtRead.join(", ")}`,
+		);
+	});
+
 	it("uploads an initial archive with the authenticated server path", async () => {
 		const requests: Request[] = [];
 		const result = await remote(Response.json({ created: true }, { status: 201 }), requests).putBatch(

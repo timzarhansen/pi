@@ -133,18 +133,18 @@ export type { Skill } from "./skills.ts";
 export type { Tool } from "./tools/index.ts";
 
 export {
-	createBashTool,
+	withFileMutationQueue,
 	// Tool factories (for custom cwd)
 	createCodingTools,
-	createEditTool,
-	createFindTool,
-	createGrepTool,
-	createLsTool,
-	createPowerShellTool,
 	createReadOnlyTools,
 	createReadTool,
+	createBashTool,
+	createEditTool,
 	createWriteTool,
-	withFileMutationQueue,
+	createGrepTool,
+	createFindTool,
+	createLsTool,
+	createPowerShellTool,
 };
 
 // Helper Functions
@@ -348,8 +348,8 @@ export async function createAgentSession(options: CreateAgentSessionOptions = {}
 			websocketConnectTimeoutMs: options.websocketConnectTimeoutMs ?? settingsManager.getWebSocketConnectTimeoutMs(),
 			maxRetries: options.maxRetries ?? providerRetrySettings.maxRetries,
 			maxRetryDelayMs: options.maxRetryDelayMs ?? providerRetrySettings.maxRetryDelayMs,
-			// Replaces the agent loop's default identity; read per request so telemetry changes apply at once.
-			identity: getClientIdentity(settingsManager),
+			// Replaces the agent loop's default identity.
+			identity: getClientIdentity(),
 			transformHeaders: async (headers) =>
 				headerRunner?.hasHandlers("before_provider_headers")
 					? headerRunner.emitBeforeProviderHeaders(headers)

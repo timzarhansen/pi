@@ -251,7 +251,7 @@ export const PRELUDE_SOURCE: string = `(function (bridge, toolsJson, globalsJson
 		tools,
 		"tools",
 		allTools.map((tool) => tool.name),
-		"ALL_TOOLS lists script-callable tools; searchTools(query) finds them by topic. Model-only tools are excluded and must be called directly.",
+		"ALL_TOOLS lists every tool; searchTools(query) finds tools by topic.",
 	);
 
 	const namespaces = new Map();

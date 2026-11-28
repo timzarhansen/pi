@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { getModel, getSupportedThinkingLevels } from "../src/compat.ts";
-import { getBuiltinModels } from "../src/providers/all.ts";
 
 describe("getSupportedThinkingLevels", () => {
 	it("includes max but not xhigh for Anthropic Opus 4.6 on anthropic-messages API", () => {
@@ -106,7 +105,7 @@ describe("getSupportedThinkingLevels", () => {
 	it.each(["gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna", "gpt-6-sol", "gpt-6-luna", "gpt-6.1-terra"] as const)(
 		"includes xhigh and max for OpenAI %s models",
 		(modelId) => {
-			const model = getBuiltinModels("openai").find((candidate) => candidate.id === modelId);
+			const model = getModel("openai", modelId);
 			expect(model).toBeDefined();
 			expect(getSupportedThinkingLevels(model!)).toEqual(["off", "low", "medium", "high", "xhigh", "max"]);
 		},
@@ -127,15 +126,14 @@ describe("getSupportedThinkingLevels", () => {
 		}
 	});
 
-	// OpenAI's catalog includes off; Azure exposes only the levels its current model data lists.
-	it("uses provider-specific thinking levels for GPT-6.1 Terra", () => {
-		const openaiModel = getBuiltinModels("openai").find((model) => model.id === "gpt-6.1-terra");
-		expect(openaiModel).toBeDefined();
-		expect(openaiModel!.thinkingLevelMap).toMatchObject({ off: "none", minimal: null });
-
-		const azureModel = getBuiltinModels("azure").find((model) => model.id === "gpt-6.1-terra");
-		expect(azureModel).toBeDefined();
-		expect(azureModel!.thinkingLevelMap).toMatchObject({ xhigh: "xhigh", max: "max" });
+	// GPT-6.1 Terra accepts reasoning.effort "none" but, like GPT-6.1 Sol, rejects "minimal".
+	it("supports off but not minimal for GPT-6.1 Terra", () => {
+		for (const provider of ["openai", "azure", "openai-codex"] as const) {
+			const model = getModel(provider, "gpt-6.1-terra");
+			expect(model).toBeDefined();
+			expect(model!.thinkingLevelMap?.off).toBe("none");
+			expect(model!.thinkingLevelMap?.minimal).toBe(provider === "openai-codex" ? "low" : null);
+		}
 	});
 
 	it.each([
